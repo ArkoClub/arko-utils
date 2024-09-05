@@ -1,0 +1,54 @@
+[project]
+name = "arko-utils"
+version = "0.2.0"
+description = "Arko 工具集"
+authors = [
+    { name = "Karako", email = "karakohear@gmail.com" },
+]
+dependencies = [
+    "rich>=13.8.0",
+    "msgspec>=0.18.0",
+    "pydantic>=2.5.0",
+    "pydantic-settings>=2.4.0",
+    "win32-setctime>=1.0.0 ; sys_platform=='win32'",
+    "pendulum>=3.0.0",
+    "typing-extensions>=4.12.0",
+]
+requires-python = ">=3.12,<4.0"
+readme = "README.md"
+license = { text = "PSF-2.0" }
+classifiers = [
+    "License :: OSI Approved :: MIT License",
+    "Programming Language :: Python :: 3 :: Only",
+    "Programming Language :: Python :: 3.12",
+    "Programming Language :: Python :: Implementation :: CPython",
+    "Topic :: Software Development :: Libraries :: Python Modules",
+]
+
+[project.optional-dependencies]
+extra = [
+    "regex>=2024.7.0",
+    "more-itertools>=10.4.0",
+]
+
+[tool.pdm]
+[tool.pdm.build]
+includes = ["src/arko", "LICENSE"]
+
+[[tool.pdm.source]]
+name = "official-pypi"
+url = "https://pypi.python.org/simple"
+verify_ssl = true
+
+[tool.pdm.dev-dependencies]
+dev = [
+    "black[d]>=24.8.0",
+]
+
+[build-system]
+requires = ["pdm-backend"]
+build-backend = "pdm.backend"
+
+[tool.black]
+line-length = 88
+target-version = ['py311', 'py312']
