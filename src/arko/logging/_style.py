@@ -78,6 +78,7 @@ HIGHLIGHT_COLOR = "#49483E"
 
 
 class MonokaiProStyle(PyStyle):
+    name = "monokai pro"
     background_color = BACKGROUND_COLOR
     highlight_color = HIGHLIGHT_COLOR
 

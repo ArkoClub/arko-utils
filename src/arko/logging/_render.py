@@ -36,7 +36,6 @@ class LogRender:
 
     def __call__(
         self,
-        console: "Console",
         renderables: Iterable["ConsoleRenderable"],
         log_time: datetime | None = None,
         time_format: str | FormatTimeCallable | None = None,
@@ -44,7 +43,6 @@ class LogRender:
         level_text: TextType = "",
         path: str | None = None,
         line_no: int | None = None,
-        link_path: str | None = None,
     ) -> list[Table]:
         level = level or Level.NOTSET
 
@@ -81,7 +79,7 @@ class LogRender:
 
         row: list["RenderableType"] = []
         if self._config.show_time:
-            log_time = log_time or console.get_datetime()
+            log_time = log_time or datetime.now()
             time_format = time_format or self._config.time_format
 
             if callable(time_format):
@@ -116,19 +114,12 @@ class LogRender:
         row.append(Renderables(renderables))
         if self._config.show_path and path:
             path_text = Text()
-            path_text.append(
-                path, style=f"link file://{link_path}" if link_path else ""
-            )
+            path_text.append(path)
             if line_no:
                 path_text.append(":")
             row.append(path_text)
             if line_no:
-                row.append(
-                    Text(
-                        f"{line_no}",
-                        style=f"link file://{link_path}#{line_no}" if link_path else "",
-                    )
-                )
+                row.append(Text(f"{line_no}"))
 
         output_main.add_row(*row)
         return list(filter(bool, result))

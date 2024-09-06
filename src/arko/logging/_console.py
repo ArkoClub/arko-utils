@@ -3,15 +3,25 @@ from rich.console import (
     Console as RichConsole,
     detect_legacy_windows,
 )
+from rich.default_styles import DEFAULT_STYLES
+from rich.theme import Theme
 
 from arko.const import IS_RUNNING_IN_PYCHARM
+from arko.logging._style import ARKO_STYLE
 
 __all__ = ("Console",)
 
 
 class Console(RichConsole):
-    def __init__(self, *args, legacy_windows: bool | None = None, **kwargs) -> None:
-        super().__init__(*args, legacy_windows=legacy_windows, **kwargs)
+    def __init__(
+        self,
+        *args,
+        theme: Theme | None = None,
+        legacy_windows: bool | None = None,
+        **kwargs,
+    ) -> None:
+        theme = Theme(DEFAULT_STYLES | ARKO_STYLE) if theme is None else theme
+        super().__init__(*args, theme=theme, legacy_windows=legacy_windows, **kwargs)
         self.legacy_windows: bool = (
             (
                 detect_legacy_windows()

@@ -1,5 +1,8 @@
+from pathlib import Path
 from types import TracebackType
-from typing import Literal, Mapping, TypeAlias
+from typing import Literal, Mapping, TypeAlias, Union
+
+StrOrPath = Union[Path, str]
 
 SysExcInfoType: TypeAlias = (
     tuple[type[BaseException], BaseException, TracebackType | None]

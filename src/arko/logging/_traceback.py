@@ -12,6 +12,7 @@ from pygments.token import (
     Text as TextToken,
     Token,
 )
+
 # noinspection PyProtectedMember
 from rich._loop import loop_last
 from rich.console import Console, ConsoleOptions, ConsoleRenderable, RenderResult

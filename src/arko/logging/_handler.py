@@ -1,24 +1,19 @@
 import logging
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import TYPE_CHECKING
 
-from rich import get_console
-
 # noinspection PyProtectedMember
-from rich._null_file import NullFile
 from rich.highlighter import Highlighter, ReprHighlighter
-from rich.logging import RichHandler
 from rich.text import Text
-from rich.theme import Theme
-from typing_extensions import Iterable
+from typing_extensions import Callable, Iterable
 
 from arko.funcs import resolve_path
-from arko.logging._console import Console
 from arko.logging._level import Level
 from arko.logging._record import LogRecord
 from arko.logging._render import LogRender, LogRenderConfig
-from arko.logging._style import ARKO_STYLE
 from arko.logging._traceback import Traceback, TracebacksConfig
+from arko.logging.sink import AbstractSink, StandardSink
+from arko.typedefs import StrOrPath
 
 if TYPE_CHECKING:
     from rich.console import ConsoleRenderable
@@ -26,30 +21,43 @@ if TYPE_CHECKING:
 __all__ = ("Handler", "default_handler")
 
 
-class Handler(RichHandler):
+class Handler(logging.Handler):
     level: Level
 
     def __init__(
         self,
         level: Level | str | int = Level.NOTSET,
-        console: Console | None = None,
+        default_sink: (
+                AbstractSink
+                | StrOrPath
+                | Callable
+                | int
+                | float
+                | datetime
+                | timedelta
+                | None
+        ) = None,
         *,
         keywords: Iterable[str] | None = None,
         highlighter: Highlighter | None = None,
-        enable_link_path: bool = True,
         markup: bool = False,
-        rich_tracebacks: bool = False,
+        rich_tracebacks: bool = True,
         traceback_config: TracebacksConfig | None = None,
         render_config: LogRenderConfig | None = None,
     ) -> None:
         level = Level[level]
         logging.Handler.__init__(self, level.num)
         self.level = level
-        self.console = console or get_console()
 
+        if default_sink is not None:
+            default_sink = (
+                StandardSink(default_sink)
+                if not isinstance(default_sink, AbstractSink)
+                else default_sink
+            )
+        self.sinks = [default_sink or StandardSink()]
         self.keywords = keywords or []
         self.highlighter = highlighter or ReprHighlighter()
-        self.enable_link_path = enable_link_path
         self.markup = markup
         self.rich_tracebacks = rich_tracebacks
 
@@ -60,7 +68,7 @@ class Handler(RichHandler):
     def setLevel(self, level: int | str | Level) -> None:
         self.level = Level[level]
 
-    def emit(self, record: LogRecord) -> None:
+    def render_record(self, record: LogRecord) -> list["ConsoleRenderable"]:
         message = self.format(record)
         traceback = None
         if (
@@ -86,17 +94,18 @@ class Handler(RichHandler):
                 message = ""
 
         message_renderable = self.render_message(record, message)
-        log_renderables = self.render(
+        return self.render(
             record=record, traceback=traceback, message_renderable=message_renderable
         )
-        if isinstance(self.console.file, NullFile):
-            self.handleError(record)
-        else:
+
+    def emit(self, record: LogRecord) -> None:
+        log_renderables = self.render_record(record)
+
+        for sink in self.sinks:
             # noinspection PyBroadException
             try:
-                for log_renderable in log_renderables:
-                    self.console.print(log_renderable)
-            except Exception:  # NOSONAR
+                sink.write(log_renderables)
+            except Exception:
                 self.handleError(record)
 
     def render_message(self, record: LogRecord, message: str) -> "ConsoleRenderable":
@@ -125,7 +134,10 @@ class Handler(RichHandler):
         message_renderable: "ConsoleRenderable",
     ) -> list["ConsoleRenderable"]:
         path = resolve_path(record.pathname)
-        level = self.get_level_text(record)
+        level_name = record.levelname
+        level_text = Text.styled(
+            level_name.ljust(8), f"logging.level.{level_name.lower()}"
+        )
         time_format = None if self.formatter is None else self.formatter.datefmt
         log_time = datetime.fromtimestamp(record.created)
 
@@ -136,20 +148,16 @@ class Handler(RichHandler):
             renderables.append(traceback)
 
         log_renderable = self._render(
-            self.console,
             renderables,
             log_time=log_time,
             time_format=time_format,
             level=record.level,
-            level_text=level,
+            level_text=level_text,
             path=path,
             line_no=record.lineno,
-            link_path=record.pathname if self.enable_link_path else None,
         )
-        # noinspection PyTypeChecker
         return log_renderable
 
 
-default_handler = Handler(
-    Level.NOTSET, Console(theme=Theme(ARKO_STYLE)), rich_tracebacks=True
-)
+default_handler = Handler()
+logging.basicConfig(handlers=[default_handler])
