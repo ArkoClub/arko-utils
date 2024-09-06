@@ -1,15 +1,11 @@
 import logging
 from datetime import datetime
-from types import ModuleType
 from typing import TYPE_CHECKING
 
-from pydantic_settings import BaseSettings
-from pygments.style import Style as PyStyle
 from rich import get_console
 
 # noinspection PyProtectedMember
 from rich._null_file import NullFile
-from rich.console import Console
 from rich.highlighter import Highlighter, ReprHighlighter
 from rich.logging import RichHandler
 from rich.text import Text
@@ -17,35 +13,17 @@ from rich.theme import Theme
 from typing_extensions import Iterable
 
 from arko.funcs import resolve_path
+from arko.logging._console import Console
 from arko.logging._level import Level
 from arko.logging._record import LogRecord
 from arko.logging._render import LogRender, LogRenderConfig
 from arko.logging._style import ARKO_STYLE
-from arko.logging._traceback import Traceback
+from arko.logging._traceback import Traceback, TracebacksConfig
 
 if TYPE_CHECKING:
     from rich.console import ConsoleRenderable
 
 __all__ = ("Handler", "default_handler")
-
-
-class TracebackConfig(BaseSettings):
-    width: int | None = None
-    code_with: int = 88
-    extra_lines: int = 3
-    theme: str | type[PyStyle] | None = None
-    word_wrap: bool = True
-    show_locals: bool = True
-    suppress: Iterable[str | ModuleType] = ()
-    max_frames: int | None = 20
-
-    class LocalsConfig(BaseSettings):
-        max_length: int = 10
-        max_string: int = 80
-        hide_dunder: bool = True
-        hide_sunder: bool = False
-
-    locals_config: LocalsConfig = LocalsConfig()
 
 
 class Handler(RichHandler):
@@ -61,7 +39,7 @@ class Handler(RichHandler):
         enable_link_path: bool = True,
         markup: bool = False,
         rich_tracebacks: bool = False,
-        traceback_config: TracebackConfig | None = None,
+        traceback_config: TracebacksConfig | None = None,
         render_config: LogRenderConfig | None = None,
     ) -> None:
         level = Level[level]
@@ -75,7 +53,7 @@ class Handler(RichHandler):
         self.markup = markup
         self.rich_tracebacks = rich_tracebacks
 
-        self.traceback_config = traceback_config or TracebackConfig()
+        self.traceback_config = traceback_config or TracebacksConfig()
 
         self._render = LogRender(render_config)
 
@@ -93,22 +71,8 @@ class Handler(RichHandler):
             exc_type, exc_value, exc_traceback = record.exc_info
             assert exc_type is not None
             assert exc_value is not None
-            traceback = Traceback.from_exception(
-                exc_type,
-                exc_value,
-                exc_traceback,
-                width=self.traceback_config.width,
-                code_width=self.traceback_config.code_with,
-                extra_lines=self.traceback_config.extra_lines,
-                theme=self.traceback_config.theme,
-                word_wrap=self.traceback_config.word_wrap,
-                show_locals=self.traceback_config.show_locals,
-                locals_max_length=self.traceback_config.locals_config.max_length,
-                locals_max_string=self.traceback_config.locals_config.max_string,
-                locals_hide_dunder=self.traceback_config.locals_config.hide_dunder,
-                locals_hide_sunder=self.traceback_config.locals_config.hide_sunder,
-                suppress=self.traceback_config.suppress,
-                max_frames=self.traceback_config.max_frames,
+            traceback = Traceback.from_config(
+                exc_type, exc_value, exc_traceback, self.traceback_config
             )
             if record.msg is not None:
                 message = record.getMessage()

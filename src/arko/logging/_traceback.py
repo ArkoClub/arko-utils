@@ -1,3 +1,7 @@
+from types import ModuleType, TracebackType
+
+from pydantic_settings import BaseSettings
+from pygments.style import Style as PyStyle
 from pygments.token import (
     Comment,
     Keyword,
@@ -8,7 +12,6 @@ from pygments.token import (
     Text as TextToken,
     Token,
 )
-
 # noinspection PyProtectedMember
 from rich._loop import loop_last
 from rich.console import Console, ConsoleOptions, ConsoleRenderable, RenderResult
@@ -19,12 +22,57 @@ from rich.style import Style
 from rich.text import Text
 from rich.theme import Theme
 from rich.traceback import Traceback as _Traceback
+from typing_extensions import Iterable
+
+__all__ = ("Traceback", "TracebacksConfig")
 
 
-__all__ = ("Traceback",)
+class TracebacksConfig(BaseSettings):
+    width: int | None = None
+    code_with: int = 88
+    extra_lines: int = 3
+    theme: str | type[PyStyle] | None = None
+    word_wrap: bool = True
+    show_locals: bool = True
+    suppress: Iterable[str | ModuleType] = ()
+    max_frames: int | None = 20
+
+    class LocalsConfig(BaseSettings):
+        max_length: int = 10
+        max_string: int = 80
+        hide_dunder: bool = True
+        hide_sunder: bool = False
+
+    locals_config: LocalsConfig = LocalsConfig()
 
 
 class Traceback(_Traceback):
+    @classmethod
+    def from_config(
+        cls,
+        exc_type: type[BaseException],
+        exc_value: BaseException,
+        traceback: TracebackType,
+        config: TracebacksConfig,
+    ) -> "Traceback":
+        return cls.from_exception(
+            exc_type,
+            exc_value,
+            traceback,
+            width=config.width,
+            code_width=config.code_with,
+            extra_lines=config.extra_lines,
+            theme=config.theme,
+            word_wrap=config.word_wrap,
+            show_locals=config.show_locals,
+            suppress=config.suppress,
+            max_frames=config.max_frames,
+            locals_max_string=config.locals_config.max_string,
+            locals_max_length=config.locals_config.max_length,
+            locals_hide_sunder=config.locals_config.hide_sunder,
+            locals_hide_dunder=config.locals_config.hide_dunder,
+        )
+
     def __rich_console__(
         self, console: Console, options: ConsoleOptions
     ) -> RenderResult:
