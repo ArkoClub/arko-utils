@@ -43,7 +43,7 @@ __all__ = ("Traceback", "TracebacksConfig")
 
 
 class TracebacksConfig(BaseSettings):
-    width: int | None = 100
+    width: int | None = None
     code_with: int = 88
     extra_lines: int = 3
     theme: str | type[PyStyle] | None = None
@@ -295,13 +295,7 @@ class Traceback(_Traceback):
                     )
                 else:
                     yield (
-                        Columns(
-                            [
-                                syntax,
-                                *render_locals(frame),
-                            ],
-                            padding=1,
-                        )
+                        Columns([syntax, *render_locals(frame)], padding=1)
                         if frame.locals
                         else syntax
                     )
