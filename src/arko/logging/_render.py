@@ -1,15 +1,17 @@
 from datetime import datetime, timedelta
 from typing import Callable, Iterable, TYPE_CHECKING
 
+from markdown_it.rules_block import table
 from pydantic_settings import BaseSettings
 from rich.containers import Renderables
 from rich.table import Table
 from rich.text import Text, TextType
 
 from arko.logging._level import Level
+from arko.const import IS_RUNNING_IN_PYCHARM
 
 if TYPE_CHECKING:
-    from rich.console import Console, ConsoleRenderable, RenderableType
+    from rich.console import ConsoleRenderable, RenderableType
 
 __all__ = ("LogRenderConfig", "LogRender")
 
@@ -43,7 +45,10 @@ class LogRender:
         level_text: TextType = "",
         path: str | None = None,
         line_no: int | None = None,
+        link_path: bool | None = None,
     ) -> list[Table]:
+        link_path = link_path and not IS_RUNNING_IN_PYCHARM
+
         level = level or Level.NOTSET
 
         output_time = None
@@ -74,8 +79,7 @@ class LogRender:
         output_main.add_column(ratio=1, style="log.message", overflow="fold")
 
         if self._config.show_path and path:
-            output_main.add_column(style="log.path", justify="right")
-            output_main.add_column(style="log.line_no", justify="left")
+            output_main.add_column(justify="right")
 
         row: list["RenderableType"] = []
         if self._config.show_time:
@@ -113,13 +117,26 @@ class LogRender:
 
         row.append(Renderables(renderables))
         if self._config.show_path and path:
-            path_text = Text()
-            path_text.append(path)
-            if line_no:
-                path_text.append(":")
-            row.append(path_text)
-            if line_no:
-                row.append(Text(f"{line_no}"))
+            path_style = f"link file://{link_path}" if link_path else ""
+            if line_no:  # 如果显示行号
+                line_no_style = (
+                    f"link file://{link_path}#{line_no}" if link_path else ""
+                )
+
+                path_table = Table.grid(pad_edge=True)
+                path_table.add_column(style="log.path", justify="right")  # 路径
+                path_table.add_column()  # 分隔符
+                path_table.add_column(style="log.line_no", justify="left")  # 行号
+
+                path_table.add_row(
+                    Text(path, style=path_style),
+                    ":",
+                    Text(str(line_no), style=line_no_style),
+                )
+
+                row.append(path_table)
+            else:  # 如果不显示行号
+                row.append(Text(path, style=path_style))
 
         output_main.add_row(*row)
         return list(filter(bool, result))

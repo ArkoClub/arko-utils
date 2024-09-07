@@ -28,20 +28,21 @@ class Handler(logging.Handler):
         self,
         level: Level | str | int = Level.NOTSET,
         default_sink: (
-                AbstractSink
-                | StrOrPath
-                | Callable
-                | int
-                | float
-                | datetime
-                | timedelta
-                | None
+            AbstractSink
+            | StrOrPath
+            | Callable
+            | int
+            | float
+            | datetime
+            | timedelta
+            | None
         ) = None,
         *,
         keywords: Iterable[str] | None = None,
         highlighter: Highlighter | None = None,
         markup: bool = False,
         rich_tracebacks: bool = True,
+        enable_link_path: bool = True,
         traceback_config: TracebacksConfig | None = None,
         render_config: LogRenderConfig | None = None,
     ) -> None:
@@ -60,6 +61,7 @@ class Handler(logging.Handler):
         self.highlighter = highlighter or ReprHighlighter()
         self.markup = markup
         self.rich_tracebacks = rich_tracebacks
+        self.enable_link_path = enable_link_path
 
         self.traceback_config = traceback_config or TracebacksConfig()
 
@@ -155,9 +157,10 @@ class Handler(logging.Handler):
             level_text=level_text,
             path=path,
             line_no=record.lineno,
+            link_path=record.pathname if self.enable_link_path else None,
         )
         return log_renderable
 
 
 default_handler = Handler()
-logging.basicConfig(handlers=[default_handler])
+logging.basicConfig(level="NOTSET", format="%(message)s", handlers=[default_handler])
