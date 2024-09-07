@@ -20,7 +20,9 @@ class Console(RichConsole):
         legacy_windows: bool | None = None,
         **kwargs,
     ) -> None:
-        theme = Theme(DEFAULT_STYLES | ARKO_STYLE) if theme is None else theme
+        theme = Theme(
+            ARKO_STYLE | (theme.styles if theme is not None else DEFAULT_STYLES)
+        )
         super().__init__(*args, theme=theme, legacy_windows=legacy_windows, **kwargs)
         self.legacy_windows: bool = (
             (

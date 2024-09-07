@@ -1,14 +1,13 @@
 from datetime import datetime, timedelta
 from typing import Callable, Iterable, TYPE_CHECKING
 
-from markdown_it.rules_block import table
 from pydantic_settings import BaseSettings
 from rich.containers import Renderables
 from rich.table import Table
 from rich.text import Text, TextType
 
-from arko.logging._level import Level
 from arko.const import IS_RUNNING_IN_PYCHARM
+from arko.logging._level import Level
 
 if TYPE_CHECKING:
     from rich.console import ConsoleRenderable, RenderableType
@@ -119,19 +118,17 @@ class LogRender:
         if self._config.show_path and path:
             path_style = f"link file://{link_path}" if link_path else ""
             if line_no:  # 如果显示行号
-                line_no_style = (
-                    f"link file://{link_path}#{line_no}" if link_path else ""
-                )
+                line_no_link = f"link=file://{link_path}#{line_no}" if link_path else ""
 
                 path_table = Table.grid(pad_edge=True)
                 path_table.add_column(style="log.path", justify="right")  # 路径
                 path_table.add_column()  # 分隔符
-                path_table.add_column(style="log.line_no", justify="left")  # 行号
+                path_table.add_column(width=4, justify="left")  # 行号
 
                 path_table.add_row(
                     Text(path, style=path_style),
                     ":",
-                    Text(str(line_no), style=line_no_style),
+                    f"[log.line_no][{line_no_link}]{line_no}[/link][/]",
                 )
 
                 row.append(path_table)

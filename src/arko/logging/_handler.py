@@ -81,7 +81,7 @@ class Handler(logging.Handler):
             exc_type, exc_value, exc_traceback = record.exc_info
             assert exc_type is not None
             assert exc_value is not None
-            traceback = Traceback.from_config(
+            traceback = Traceback.from_exception(
                 exc_type, exc_value, exc_traceback, self.traceback_config
             )
             if record.msg is not None:
