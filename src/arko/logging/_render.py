@@ -118,18 +118,17 @@ class LogRender:
         if self._config.show_path and path:
             path_style = f"link file://{link_path}" if link_path else ""
             if line_no:  # 如果显示行号
-                line_no_link = f"link=file://{link_path}#{line_no}" if link_path else ""
+                if link_path:
+                    lineno_text = f"[log.line_no][link=file://{link_path}#{line_no}]{line_no}[/link][/]"
+                else:
+                    lineno_text = str(line_no)
 
                 path_table = Table.grid(pad_edge=True)
                 path_table.add_column(style="log.path", justify="right")  # 路径
                 path_table.add_column()  # 分隔符
                 path_table.add_column(width=4, justify="left")  # 行号
 
-                path_table.add_row(
-                    Text(path, style=path_style),
-                    ":",
-                    f"[log.line_no][{line_no_link}]{line_no}[/link][/]",
-                )
+                path_table.add_row(Text(path, style=path_style), ":", lineno_text)
 
                 row.append(path_table)
             else:  # 如果不显示行号
